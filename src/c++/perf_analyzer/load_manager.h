@@ -122,6 +122,8 @@ class LoadManager {
   };
 
  protected:
+  LoadManager() = default;
+
   LoadManager(
       const bool async, const bool streaming, const int32_t batch_size,
       const size_t max_threads, const size_t sequence_length,

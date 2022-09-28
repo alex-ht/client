@@ -210,8 +210,19 @@ RequestRateManager::Infer(
   std::shared_ptr<std::map<std::string, AsyncRequestProperties>> async_req_map(
       new std::map<std::string, AsyncRequestProperties>());
 
+  uint32_t seq_id = 0;
+
   // Callback function for handling asynchronous requests
   const auto callback_func = [&](cb::InferResult* result) {
+    const auto& now{
+        std::chrono::steady_clock::now().time_since_epoch().count() /
+        1000000000.0};
+    std::cout << thread_config->id_ << "," << seq_id
+              << ": recieved response at " << std::setprecision(15) << now
+              << std::endl;
+    sequence_states_[seq_id].is_ready = true;
+    sequence_states_[seq_id].n++;
+
     std::shared_ptr<cb::InferResult> result_ptr(result);
     if (thread_stat->cb_status_.IsOk()) {
       // Add the request timestamp to thread Timestamp vector with
@@ -249,6 +260,11 @@ RequestRateManager::Infer(
     }
   }
 
+  for (uint32_t sequence_id = 0; sequence_id < sequence_stat_.size();
+       sequence_id++) {
+    sequence_states_[sequence_id].is_ready = true;
+  }
+
   // run inferencing until receiving exit signal to maintain server load.
   do {
     // Should wait till main thread signals execution start
@@ -265,8 +281,6 @@ RequestRateManager::Infer(
 
     thread_config->is_paused_ = false;
 
-    uint32_t seq_id = 0;
-
     // Sleep if required
     std::chrono::steady_clock::time_point now =
         std::chrono::steady_clock::now();
@@ -274,6 +288,14 @@ RequestRateManager::Infer(
         (schedule_[thread_config->index_] +
          (thread_config->rounds_ * (*gen_duration_))) -
         (now - start_time_);
+
+    // std::cout << "wait_time = " << wait_time.count() / 1000000000.0
+    //           << " sec = ("
+    //           << schedule_[thread_config->index_].count() / 1000000000.0
+    //           << " + (" << thread_config->rounds_ / 1000000000.0 << " * "
+    //           << (*gen_duration_).count() / 1000000000.0 << ")) - ("
+    //           << (now - start_time_).count() / 1000000000.0 << ")" <<
+    //           std::endl;
 
     thread_config->index_ = (thread_config->index_ + thread_config->stride_);
     // Loop around the schedule to keep running
@@ -306,7 +328,8 @@ RequestRateManager::Infer(
 
     if (on_sequence_model_) {
       // Select one of the sequence at random for this request
-      seq_id = rand() % sequence_stat_.size();
+      // seq_id = rand() % sequence_stat_.size();
+      seq_id = NewSmartMethod();
       // Need lock to protect the order of dispatch across worker threads.
       // This also helps in reporting the realistic latencies.
       std::lock_guard<std::mutex> guard(sequence_stat_[seq_id]->mtx_);
@@ -331,6 +354,12 @@ RequestRateManager::Infer(
           }
         }
 
+        const auto& now{
+            std::chrono::system_clock::now().time_since_epoch().count() /
+            1000000000.0};
+        std::cout << thread_config->id_ << "," << seq_id
+                  << ": sending request at " << std::setprecision(15) << now
+                  << std::endl;
         Request(
             ctx, request_id++, delayed, callback_func, async_req_map,
             thread_stat);

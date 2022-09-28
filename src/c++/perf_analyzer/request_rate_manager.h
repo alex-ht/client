@@ -51,7 +51,7 @@ namespace triton { namespace perfanalyzer {
 ///
 class RequestRateManager : public LoadManager {
  public:
-  ~RequestRateManager();
+  virtual ~RequestRateManager();
 
   /// Create an object of realistic load manager that is responsible to maintain
   /// specified load on inference server.
@@ -103,6 +103,8 @@ class RequestRateManager : public LoadManager {
   cb::Error ResetWorkers() override;
 
  protected:
+  RequestRateManager() = default;
+
   struct ThreadConfig {
     ThreadConfig(uint32_t index, uint32_t stride)
         : index_(index), id_(index), stride_(stride), is_paused_(false),
@@ -168,6 +170,41 @@ class RequestRateManager : public LoadManager {
   std::vector<std::chrono::nanoseconds> schedule_;
   std::chrono::steady_clock::time_point start_time_;
   bool execute_;
+
+ private:
+  uint32_t NewSmartMethod()
+  {
+    while (true) {
+      {
+        std::lock_guard<std::mutex> lock(sequence_states_mutex_);
+        //   lock.lock();
+        for (auto& sequence_state_pair : sequence_states_) {
+          const auto& sequence_id{sequence_state_pair.first};
+          auto& sequence_state{sequence_state_pair.second};
+          // need to check n here
+          if (sequence_state.is_ready) {
+            sequence_state.is_ready = false;
+            return sequence_id;
+          }
+        }
+        std::cout << "Nothing was ready" << std::endl;
+        //   lock.unlock();
+      }
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    // none are ready
+    // gotta wait and retry
+  }
+
+  struct SequenceState {
+    bool is_ready{true};
+    uint64_t n{0};
+  };
+
+  std::map<uint32_t, SequenceState> sequence_states_{};
+  std::mutex sequence_states_mutex_{};
 };
 
 }}  // namespace triton::perfanalyzer

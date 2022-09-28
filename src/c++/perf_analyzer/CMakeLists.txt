@@ -48,6 +48,7 @@ set(
   report_writer.cc
   mpi_utils.cc
   metrics_manager.cc
+  sequence_request_rate_manager.cc
 )
 
 set(
@@ -68,6 +69,7 @@ set(
   constants.h
   metrics.h
   metrics_manager.h
+  sequence_request_rate_manager.h
 )
 
 add_executable(
