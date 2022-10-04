@@ -30,6 +30,11 @@ project(cc-clients LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+if(CONAN_LIBCXX STREQUAL "libstdc++11")
+    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
+elseif(CONAN_LIBCXX STREQUAL "libstdc++")
+    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
+endif()
 #
 # Options
 #

@@ -155,7 +155,6 @@ if(TRITON_ENABLE_CC_GRPC OR TRITON_ENABLE_PERF_ANALYZER)
   )
 
   foreach(_client_target grpc-client-library grpcclient_static grpcclient)
-    #target_compile_features(${_client_target} PRIVATE cxx_std_11)
     target_compile_options(
       ${_client_target} PRIVATE
       $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
@@ -322,7 +321,6 @@ if(TRITON_ENABLE_CC_HTTP OR TRITON_ENABLE_PERF_ANALYZER)
   )
 
   foreach(_client_target http-client-library httpclient_static httpclient)
-    #target_compile_features(${_client_target} PRIVATE cxx_std_11)
     target_compile_options(
       ${_client_target} PRIVATE
       $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
