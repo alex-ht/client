@@ -27,15 +27,7 @@
 cmake_minimum_required(VERSION 3.17)
 
 project(cc-clients LANGUAGES C CXX)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-message("CONAN_LIBCXX=${CONAN_LIBCXX}")
-if(CONAN_LIBCXX STREQUAL "libstdc++11")
-    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=1)
-elseif(CONAN_LIBCXX STREQUAL "libstdc++")
-    add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
-endif()
+add_definitions(-D_GLIBCXX_USE_CXX11_ABI=0)
 #
 # Options
 #
